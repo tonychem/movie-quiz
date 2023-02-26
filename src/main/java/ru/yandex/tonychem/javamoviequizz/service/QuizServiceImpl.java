@@ -2,6 +2,7 @@ package ru.yandex.tonychem.javamoviequizz.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.yandex.tonychem.javamoviequizz.model.DifficultyMode;
 import ru.yandex.tonychem.javamoviequizz.model.Movie;
 import ru.yandex.tonychem.javamoviequizz.model.QuizDto;
 import ru.yandex.tonychem.javamoviequizz.repository.MovieRepository;
@@ -17,16 +18,16 @@ public class QuizServiceImpl implements QuizService {
     private final MovieRepository movieRepository;
 
     @Override
-    public QuizDto getRandomQuiz() {
+    public QuizDto getRandomQuiz(DifficultyMode mode) {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
 
         // Выбираем фильм
-        long maxIndex = movieRepository.getMovieCount();
+        List<Long> appropriateMovieIdsList = movieRepository.getMovieIdsForMode(mode.getRating());
         Movie chosenMovie;
 
         do {
-            long randIndex = rnd.nextLong(maxIndex) + 1;
-            chosenMovie = movieRepository.findById(randIndex).orElse(null);
+            int randIndex = rnd.nextInt(appropriateMovieIdsList.size());
+            chosenMovie = movieRepository.findById(appropriateMovieIdsList.get(randIndex)).orElse(null);
         } while (chosenMovie == null);
 
         //Выбираем ссылку на картинку
@@ -38,7 +39,7 @@ public class QuizServiceImpl implements QuizService {
         //Формируем рандомные названия фильмов
         List<String> options = new ArrayList<>();
         while (true) {
-            List<Long> probableIds = getThreeProbableMovieOptions(maxIndex);
+            List<Long> probableIds = getThreeProbableMovieOptions(appropriateMovieIdsList, chosenMovie.getId());
             List<String> optionNames = movieRepository.findAllById(probableIds).stream()
                     .map(Movie::getName)
                     .toList();
@@ -65,13 +66,18 @@ public class QuizServiceImpl implements QuizService {
         return dto;
     }
 
-    private List<Long> getThreeProbableMovieOptions(Long maxNumberInclusive) {
+    private List<Long> getThreeProbableMovieOptions(List<Long> listOfIds, Long excludeId) {
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         List<Long> probableIds = new ArrayList<>();
 
         while (probableIds.size() != 3) {
-            probableIds.add(rnd.nextLong(maxNumberInclusive) + 1);
+            int randomIndex = rnd.nextInt(listOfIds.size());
+
+            if (!listOfIds.get(randomIndex).equals(excludeId)) {
+                probableIds.add(listOfIds.get(randomIndex));
+            }
         }
+
         return probableIds;
     }
 

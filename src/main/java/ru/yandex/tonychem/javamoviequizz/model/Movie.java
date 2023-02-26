@@ -2,8 +2,9 @@ package ru.yandex.tonychem.javamoviequizz.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -11,7 +12,8 @@ import java.util.List;
 @Table(name = "movies")
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 public class Movie {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,4 +26,7 @@ public class Movie {
     @CollectionTable(name = "movies_links", joinColumns = @JoinColumn(name = "movie_id"))
     @Column(name = "link")
     private List<String> links;
+
+    @Column(name = "rating", nullable = false)
+    private Double rating;
 }
